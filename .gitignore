@@ -1,5 +1,5 @@
 # Stuff
-.idea/
+.idea/**
 .DS_Store
 
 ## Ignore Visual Studio temporary files, build results, and
@@ -354,3 +354,4 @@ MigrationBackup/
 
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
+
