@@ -21,9 +21,23 @@ namespace Leisure
         
         static async Task Main()
         {
-            Console.WriteLine("Enter token:");
-            var token = Console.ReadLine();
-            Console.Clear();
+            string token;
+            if (!File.Exists("token.txt"))
+            {
+                Console.WriteLine("\"token.txt\" doesn't exist. Enter token:");
+                token = Console.ReadLine();
+                Console.WriteLine("Create token.txt? [Y/n]");
+                if (Console.ReadKey().Key != ConsoleKey.N)
+                {
+                    await using var file = File.CreateText("token.txt");
+                    file.Write(token);
+                    
+                }
+            }
+            else
+            {
+                token = File.ReadAllText("token.txt");
+            }
 
             var gameInfos = new List<GameInfo>();
 
