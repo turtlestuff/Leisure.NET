@@ -7,18 +7,21 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Discord;
-using Discord.Commands;
 using Discord.WebSocket;
 
 namespace Leisure
 {
     static partial class Program
     {
-        static DiscordSocketClient client;
+        static DiscordSocketClient client = default!;
 
-        static Dictionary<IUser, GameCollection> users;
+        static Dictionary<IUser, GameCollection> playingUsers = new Dictionary<IUser, GameCollection>();
 
-        static ImmutableArray<GameInfo> games;
+        static ImmutableArray<GameInfo> installedGames;
+
+        static Dictionary<IMessageChannel, GameLobby> startingGames = new Dictionary<IMessageChannel, GameLobby>();
+
+        static int gameCount;
         
         static async Task Main()
         {
@@ -41,7 +44,7 @@ namespace Leisure
 
             var gameInfos = new List<GameInfo>();
 
-            // Find all the games. The game DLL's name has to currently end in "Game". 
+            // Find all the installedGames. The game DLL's name has to currently end in "Game". 
             // TODO: Isolate each game to its own folder
             foreach (var asm in Directory.GetFiles("Games", "*Game.dll", SearchOption.AllDirectories))
             {
@@ -56,7 +59,7 @@ namespace Leisure
                     // Find every class that implements GameInfo and make a new instance of it.
                     gameInfos.AddRange(from t in assembly.ExportedTypes
                         where t.IsSubclassOf(typeof(GameInfo))
-                        select (GameInfo) Activator.CreateInstance(t));
+                        select (GameInfo) Activator.CreateInstance(t)!);
                 }
                 catch (Exception ex)
                 {
@@ -64,7 +67,7 @@ namespace Leisure
                 }
             }
 
-            games = gameInfos.ToImmutableArray();
+            installedGames = gameInfos.ToImmutableArray();
 
             client = new DiscordSocketClient();
             client.MessageReceived += ClientOnMessageReceived;
@@ -94,7 +97,7 @@ namespace Leisure
             }
             
             if (msg.Author != client.CurrentUser)
-                await users[msg.Author].CurrentGame.OnMessage(msg);
+                await playingUsers[msg.Author].CurrentGame.OnMessage(msg);
         }
     }
 }

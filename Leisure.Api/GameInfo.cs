@@ -1,9 +1,13 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using Discord;
 
 namespace Leisure
 {
+    /// <summary>
+    /// Represents the information about a game.
+    /// </summary>
     public abstract class GameInfo
     {
         /// <summary>
@@ -29,7 +33,7 @@ namespace Leisure
         /// <summary>
         /// A short description of the amount of players a game can accept.
         /// </summary>
-        public abstract string NumOfPlayers { get; }
+        public abstract string PlayerCountDescription { get; }
 
         /// <summary>
         /// A short, perhaps acronymified name used for joining the game.
@@ -41,14 +45,14 @@ namespace Leisure
         /// </summary>
         /// <param name="i">Amount of players to check.</param>
         /// <returns>True if the amount is valid.</returns>
-        public abstract bool IsValidPlayerCount(uint i);
+        public abstract bool IsValidPlayerCount(int i);
         
         /// <summary>
         /// Creates the game.
         /// </summary>
         /// <param name="id">The ID of the game.</param>
-        /// <param name="players">The <see cref="System.Collections.Immutable.ImmutableArray"/> of players.</param>
+        /// <param name="players">The players in the new game.</param>
         /// <returns>The new <see cref="Leisure.GameInstance"/></returns>
-        public abstract GameInstance CreateGame(uint id, ImmutableArray<IUser> players);
+        public abstract GameInstance CreateGame(int id, HashSet<IUser> players);
     }
 }
