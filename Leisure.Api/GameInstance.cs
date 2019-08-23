@@ -18,8 +18,7 @@ namespace Leisure
         public uint Id { get; }
 
         /// <summary>
-        /// This is ran when the game has been closed, and is ready to be initalized.
-        /// THIS ASYNC
+        /// This is ran when the game has been closed, and is ready to be initialized.
         /// </summary>
         public abstract Task Initialize();
         
@@ -27,7 +26,7 @@ namespace Leisure
         /// Ran when Leisure.NET detects a message for your game.
         /// </summary>
         /// <param name="message">Message sent</param>
-        public abstract void OnMessage(IUserMessage message);
+        public abstract Task OnMessage(IUserMessage message);
 
         /// <summary>
         /// Broadcasts a message to every user in the game.
@@ -63,8 +62,7 @@ namespace Leisure
         protected async Task BroadcastExcluding(string text, bool isTTS = false, Embed embed = default,
             params IUser[] exclude)
         {
-            IEnumerable<IUser> players = Players.Except(exclude);
-            Parallel.ForEach(players, async player => await player.SendMessageAsync(text, isTTS, embed));
+            Parallel.ForEach(Players.Except(exclude), async player => await player.SendMessageAsync(text, isTTS, embed));
         }
     }
 }

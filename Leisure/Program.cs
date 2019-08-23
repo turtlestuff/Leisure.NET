@@ -7,11 +7,12 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Discord;
+using Discord.Commands;
 using Discord.WebSocket;
 
 namespace Leisure
 {
-    static class Program
+    static partial class Program
     {
         static DiscordSocketClient client;
 
@@ -31,7 +32,6 @@ namespace Leisure
                 {
                     await using var file = File.CreateText("token.txt");
                     file.Write(token);
-                    
                 }
             }
             else
@@ -68,7 +68,11 @@ namespace Leisure
 
             client = new DiscordSocketClient();
             client.MessageReceived += ClientOnMessageReceived;
-            client.Log += async msg => Console.WriteLine(msg);
+            client.Log += msg =>
+            {
+                Console.WriteLine(msg.ToString());
+                return Task.CompletedTask;
+            };
             
             await client.LoginAsync(TokenType.Bot, token);
             await client.StartAsync();
@@ -89,18 +93,8 @@ namespace Leisure
                 return;
             }
             
-            users[msg.Author].CurrentGame.OnMessage(msg);
-        }
-
-        static async Task ParseGuildMessage(SocketUserMessage msg)
-        {
-            // Find the game info that has that prefix.
-            var game = games.FirstOrDefault(game => msg.Content.StartsWith(game.Prefix));
-            if (game != null)
-            {
-                await msg.Channel.SendMessageAsync("Game: " + game.Name);
-            }
+            if (msg.Author != client.CurrentUser)
+                await users[msg.Author].CurrentGame.OnMessage(msg);
         }
     }
-
 }

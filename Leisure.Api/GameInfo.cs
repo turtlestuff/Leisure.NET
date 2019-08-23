@@ -36,7 +36,6 @@ namespace Leisure
         /// </summary>
         public abstract string Prefix { get; }
         
-        
         /// <summary>
         /// Checks whether a certain number of players is valid for a game.
         /// </summary>
@@ -49,7 +48,7 @@ namespace Leisure
         /// </summary>
         /// <param name="id">The ID of the game.</param>
         /// <param name="players">The <see cref="System.Collections.Immutable.ImmutableArray"/> of players.</param>
-        /// <returns>The new <see cref="Leisure.Api.GameInstance"/></returns>
+        /// <returns>The new <see cref="Leisure.GameInstance"/></returns>
         public abstract GameInstance CreateGame(uint id, ImmutableArray<IUser> players);
     }
 }

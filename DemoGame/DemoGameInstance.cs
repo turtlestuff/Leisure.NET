@@ -12,14 +12,14 @@ namespace DemoGame
         {
         }
         
-        public async override Task Initialize()
+        public override async Task Initialize()
         {
-            Broadcast("Ready!");
+            await Broadcast("Ready!");
         }
 
-        public override void OnMessage(IUserMessage message)
+        public override async Task OnMessage(IUserMessage message)
         {
-            Broadcast(message.Content);
+            await Broadcast(message.Content);
         }
     }
 }
