@@ -19,11 +19,11 @@ namespace Leisure
         /// A description for the game, that will be seen by players if they wish.
         /// </summary>
         public abstract string Description { get; }
-        
+
         /// <summary>
         /// The version of the game. 
         /// </summary>
-        public abstract Version Version { get; }
+        public virtual Version Version => GetType().Assembly.GetName().Version;
         
         /// <summary>
         /// The author(s) of the games.

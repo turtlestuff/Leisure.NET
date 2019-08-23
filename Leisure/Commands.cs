@@ -3,6 +3,7 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
+using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 
@@ -49,18 +50,11 @@ namespace Leisure
 
         static async Task CloseLobby(GameInfo game, SocketUserMessage msg, GameLobby newGame)
         {
-            if (newGame.Players.Count < 2)
-            {
-                await msg.Channel.SendMessageAsync("Nobody joined");
-            }
-            else if (!game.IsValidPlayerCount(newGame.Players.Count))
-            {
+            if (!game.IsValidPlayerCount(newGame.Players.Count))
                 await msg.Channel.SendMessageAsync("Not a valid amount of players for this game. Game requires: " + game.PlayerCountDescription);
-            }
             else
-            {
                 await msg.Channel.SendMessageAsync("Starting game");
-            }
+            
             startingGames.Remove(msg.Channel);
         }
 
@@ -85,17 +79,63 @@ namespace Leisure
             switch (msg.Content[pos..])
             {
                 case "help":
-                    await msg.Channel.SendMessageAsync("This is the help.");
+                    await SendHelp(msg);
                     return;
                 case "about":
                     await msg.Channel.SendMessageAsync("This is the about.");
                     return;
+                case "games":
+                    await SendGames(msg);
+                    return;
                 case "ping":    
                     await msg.Channel.SendMessageAsync("Pong!");
+                    return;
+                case var gameName when installedGames.FirstOrDefault(g => String.Equals(g.Prefix, gameName, StringComparison.Ordinal)) is GameInfo game:
+                    await SendGame(game, msg);
                     return;
                 default:
                     return;
             }
+        }
+
+        static async Task SendHelp(SocketUserMessage msg)
+        {
+            var builder = new EmbedBuilder
+            {
+                Title = "Leisure Help",
+                Description = @"**leisure:ping**: Makes sure the bot is online
+**leisure:help**: Gets this message
+**leisure:games**: Gets the list of the available games
+**leisure:<game prefix>**: Gets information about the specified game"
+            };
+            
+            await msg.Channel.SendMessageAsync("", embed: builder.Build());
+        }
+
+        static async Task SendGame(GameInfo game, SocketUserMessage msg)
+        {
+            var builder = new EmbedBuilder
+            {
+                Title = $"**{game.Name}** ({game.Prefix}:)",
+                Description = $@"{game.Description}
+
+**Author(s)**: {game.Author}
+**Version:** {game.Version},
+**Player Requirements:** {game.PlayerCountDescription}"
+            };
+            
+            await msg.Channel.SendMessageAsync("", embed: builder.Build());
+        }
+
+        static async Task SendGames(SocketUserMessage msg)
+        {
+            var builder = new EmbedBuilder
+            {
+                Title = "Available Games",
+                Description = string.Join("\n", installedGames.Select(game => $"**{game.Name}** ({game.Prefix}:)"))
+            };
+            
+            await msg.Channel.SendMessageAsync("", embed: builder.Build());
         }
     }
 }

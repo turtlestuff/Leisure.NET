@@ -9,9 +9,8 @@ namespace DemoGame
     public class DemoGameInfo : GameInfo
     {
         public override string Name => "Demo Game";
-        public override string Description => "The most exciting demo!";
-        public override Version Version => new Version(1, 0, 0, 0);
-        public override string Author => "Leisure.Net Contributors";
+        public override string Description => "The most exciting demo!"; 
+        public override string Author => "Leisure.NET Contributors";
         public override string Prefix => "demo";
         public override string PlayerCountDescription => "3 players only";
 
