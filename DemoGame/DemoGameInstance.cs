@@ -1,5 +1,6 @@
 
 using System.Collections.Immutable;
+using System.Threading.Tasks;
 using Discord;
 using Leisure;
 
@@ -11,7 +12,7 @@ namespace DemoGame
         {
         }
         
-        public override void Initialize()
+        public async override Task Initialize()
         {
             Broadcast("Ready!");
         }
