@@ -18,9 +18,11 @@ namespace DemoGame
             await Broadcast("Ready!");
         }
 
-        public override async Task OnMessage(IUserMessage message)
+        public override async Task OnMessage(string command, string args, IUserMessage msg)
         {
-            await Broadcast(message.Content);
+            await BroadcastTo(command, false, default, msg.Author);
+            await BroadcastExcluding($"{msg.Author.Username}: {command}", false, 
+                default, msg.Author);
         }
     }
 }

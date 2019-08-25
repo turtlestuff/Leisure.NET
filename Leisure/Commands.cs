@@ -51,9 +51,27 @@ namespace Leisure
         static async Task CloseLobby(GameInfo game, SocketUserMessage msg, GameLobby newGame)
         {
             if (!game.IsValidPlayerCount(newGame.Players.Count))
-                await msg.Channel.SendMessageAsync("Not a valid amount of players for this game. Game requires: " + game.PlayerCountDescription);
+            {
+                await msg.Channel.SendMessageAsync("Not a valid amount of players for this game. Game requires: " +
+                                                   game.PlayerCountDescription);
+            }
             else
+            {
                 await msg.Channel.SendMessageAsync("Starting game");
+                var inst = game.CreateGame(newGame.Id, newGame.Players);
+                foreach (var p in newGame.Players) 
+                {
+                    if (playingUsers.ContainsKey(p.Id))
+                    {
+                        playingUsers[p.Id].Games.Add(inst);
+                    }
+                    else
+                    {
+                        playingUsers.Add(p.Id,new GameCollection(inst));
+                    }
+                }
+            }
+                
             
             startingGames.Remove(msg.Channel);
         }

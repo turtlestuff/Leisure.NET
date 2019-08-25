@@ -15,7 +15,7 @@ namespace Leisure
     {
         static DiscordSocketClient client = default!;
 
-        static Dictionary<IUser, GameCollection> playingUsers = new Dictionary<IUser, GameCollection>();
+        static Dictionary<ulong, GameCollection> playingUsers = new Dictionary<ulong, GameCollection>();
 
         static ImmutableArray<GameInfo> installedGames;
 
@@ -85,19 +85,28 @@ namespace Leisure
 
         static async Task ClientOnMessageReceived(SocketMessage arg)
         {
+            foreach (var g in playingUsers)
+            {
+                Console.WriteLine("{0}: Main {1}",g.Key,g.Value);
+            }
             // Not a message sent by a user
             if (!(arg is SocketUserMessage msg))    
                 return;
 
-            if (msg.Author is SocketGuildUser)
-            {
+            if (msg.Channel is IGuildChannel)
+            {    
                 // We are in a discord server. Try to start new game
                 await ParseGuildMessage(msg);
                 return;
             }
-            
+
+
+
             if (msg.Author != client.CurrentUser)
-                await playingUsers[msg.Author].CurrentGame.OnMessage(msg);
+                await ParseDmMessage(msg);
+
+            
+            
         }
     }
 }

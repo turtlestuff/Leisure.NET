@@ -1,4 +1,6 @@
-using System.Collections.Immutable;
+using System;
+using System.Collections.Generic;
+using Discord;
 
 namespace Leisure
 {
@@ -10,19 +12,24 @@ namespace Leisure
         internal GameCollection(GameInstance startingGame)
         {
             CurrentGame = startingGame;
-            var builder = ImmutableArray.CreateBuilder<GameInstance>();
-            builder.Add(startingGame);
-            Games = builder.ToImmutable();
+            Games = new List<GameInstance>();
+            Games.Add(startingGame);
         }
-        
+
         /// <summary>
         /// The games which the user is in.
         /// </summary>
-        public ImmutableArray<GameInstance> Games { get; }
-        
+        public List<GameInstance> Games { get; }
+
         /// <summary>
         /// The game the user is currently interacting with.
         /// </summary>
-        public GameInstance CurrentGame { get; }
+        public GameInstance CurrentGame;
+
+        /// <inheritdoc />
+        public override string ToString()
+        {
+            return $"({CurrentGame.Id})";
+        }
     }
 }

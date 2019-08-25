@@ -40,8 +40,10 @@ namespace Leisure
         /// <summary>
         /// Ran when Leisure.NET detects a message for your game.
         /// </summary>
-        /// <param name="message">Message sent</param>
-        public abstract Task OnMessage(IUserMessage message);
+        /// <param name="command">The command the user sent to the game</param>
+        /// <param name="args">Any arguments the user sent</param>
+        /// <param name="msg">The message sent</param>
+        public abstract Task OnMessage(string command, string args, IUserMessage msg);
 
         /// <summary>
         /// Broadcasts a message to every user in the game.
@@ -83,9 +85,14 @@ namespace Leisure
         protected async Task BroadcastExcluding(string text, bool isTTS = false, Embed? embed = default,
             params IUser[] exclude)
         {
-            foreach (var player in Players.Except(exclude)) 
+            var players = Players;
+            foreach (var e in exclude)
             {
-                await player.SendMessageAsync(text, isTTS, embed);
+                players.RemoveWhere(user => user.Id == e.Id);
+            }
+            foreach (var p in players) 
+            {
+                await p.SendMessageAsync(text, isTTS, embed);
             }
         }
     }

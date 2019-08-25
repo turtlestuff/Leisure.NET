@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.Immutable;
+﻿using System.Collections.Generic;
 using Discord;
 using Leisure;
 
@@ -15,6 +13,6 @@ namespace DemoGame
         public override string PlayerCountDescription => "3 players only";
 
         public override GameInstance CreateGame(int id, HashSet<IUser> players) => new DemoGameInstance(id, players);
-        public override bool IsValidPlayerCount(int i) => i == 3;
+        public override bool IsValidPlayerCount(int i) => i == 1;
     }
 }
