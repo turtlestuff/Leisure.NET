@@ -1,6 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 
@@ -21,12 +19,12 @@ namespace Leisure
             Id = id;
             Players = players;
         }
-        
+
         /// <summary>
         /// Gets the players playing the game.
         /// </summary>
         public HashSet<IUser> Players { get; }
-        
+
         /// <summary>
         /// Get the ID of the game.
         /// </summary>
@@ -36,7 +34,7 @@ namespace Leisure
         /// This is ran when the game has been closed, and is ready to be initialized.
         /// </summary>
         public abstract Task Initialize();
-        
+
         /// <summary>
         /// Ran when Leisure.NET detects a message for your game.
         /// </summary>
@@ -54,12 +52,12 @@ namespace Leisure
         /// <returns></returns>
         protected async Task Broadcast(string text, bool isTTS = false, Embed? embed = default)
         {
-            foreach (var player in Players) 
+            foreach (var player in Players)
             {
                 await player.SendMessageAsync(text, isTTS, embed);
             }
         }
-        
+
         /// <summary>
         /// Broadcasts a message to every user  n <paramref name="players"/>.
         /// </summary>
@@ -67,9 +65,10 @@ namespace Leisure
         /// <param name="isTTS">Message send as TTS? (default is false)</param>
         /// <param name="embed">Embed to send (default is none)</param>
         /// <param name="players">Users to send.</param>
-        protected async Task BroadcastTo(string text, bool isTTS = false, Embed? embed = default, params IUser[] players)
+        protected async Task BroadcastTo(string text, bool isTTS = false, Embed? embed = default,
+            params IUser[] players)
         {
-            foreach (var player in players) 
+            foreach (var player in players)
             {
                 await player.SendMessageAsync(text, isTTS, embed);
             }
@@ -90,7 +89,8 @@ namespace Leisure
             {
                 players.RemoveWhere(user => user.Id == e.Id);
             }
-            foreach (var p in players) 
+
+            foreach (var p in players)
             {
                 await p.SendMessageAsync(text, isTTS, embed);
             }

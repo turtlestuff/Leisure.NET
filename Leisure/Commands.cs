@@ -1,6 +1,5 @@
 using System;
 using System.Linq;
-using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
 using Discord;
@@ -27,7 +26,7 @@ namespace Leisure
                 await ParseGameCommand(game, msg, pos);
             }
         }
-        
+
         static async Task ParseGameCommand(GameInfo game, SocketUserMessage msg, int pos)
         {
             switch (msg.Content[pos..])
@@ -39,7 +38,7 @@ namespace Leisure
                         await StartNewLobby(game, msg);
 
                     return;
-                case "close" when startingGames.TryGetValue(msg.Channel, out var newGame) 
+                case "close" when startingGames.TryGetValue(msg.Channel, out var newGame)
                                   && newGame.StartingUser == msg.Author:
                     await CloseLobby(game, msg, newGame);
                     return;
@@ -59,7 +58,7 @@ namespace Leisure
             {
                 await msg.Channel.SendMessageAsync("Starting game");
                 var inst = game.CreateGame(newGame.Id, newGame.Players);
-                foreach (var p in newGame.Players) 
+                foreach (var p in newGame.Players)
                 {
                     if (playingUsers.ContainsKey(p.Id))
                     {
@@ -67,12 +66,12 @@ namespace Leisure
                     }
                     else
                     {
-                        playingUsers.Add(p.Id,new GameCollection(inst));
+                        playingUsers.Add(p.Id, new GameCollection(inst));
                     }
                 }
             }
-                
-            
+
+
             startingGames.Remove(msg.Channel);
         }
 
@@ -105,10 +104,12 @@ namespace Leisure
                 case "games":
                     await SendGames(msg);
                     return;
-                case "ping":    
+                case "ping":
                     await msg.Channel.SendMessageAsync("Pong!");
                     return;
-                case var gameName when installedGames.FirstOrDefault(g => String.Equals(g.Prefix, gameName, StringComparison.Ordinal)) is GameInfo game:
+                case var gameName
+                    when installedGames.FirstOrDefault(g => String.Equals(g.Prefix, gameName, StringComparison.Ordinal))
+                        is GameInfo game:
                     await SendGame(game, msg);
                     return;
                 default:
@@ -126,7 +127,7 @@ namespace Leisure
 **leisure:games**: Gets the list of the available games
 **leisure:<game prefix>**: Gets information about the specified game"
             };
-            
+
             await msg.Channel.SendMessageAsync("", embed: builder.Build());
         }
 
@@ -141,7 +142,7 @@ namespace Leisure
 **Version:** {game.Version},
 **Player Requirements:** {game.PlayerCountDescription}"
             };
-            
+
             await msg.Channel.SendMessageAsync("", embed: builder.Build());
         }
 
@@ -152,7 +153,7 @@ namespace Leisure
                 Title = "Available Games",
                 Description = string.Join("\n", installedGames.Select(game => $"**{game.Name}** ({game.Prefix}:)"))
             };
-            
+
             await msg.Channel.SendMessageAsync("", embed: builder.Build());
         }
     }

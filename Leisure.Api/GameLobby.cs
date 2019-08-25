@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Threading.Tasks;
 using Discord;
 
@@ -18,27 +17,27 @@ namespace Leisure
             Channel = channel;
             GameInfo = gameInfo;
         }
-        
+
         /// <summary>
         /// The members in the lobby that will join the game when it starts.
         /// </summary>
         public HashSet<IUser> Players { get; } = new HashSet<IUser>();
-        
+
         /// <summary>
         /// The ID of the game that will start.
         /// </summary>
         public int Id { get; }
-        
+
         /// <summary>
         /// The user that opened the lobby.
         /// </summary>
         public IUser StartingUser { get; }
-        
+
         /// <summary>
         /// The channel in which the lobby was opened.
         /// </summary>
         public IMessageChannel Channel { get; }
-        
+
         /// <summary>
         /// The game that will be played when the lobby closes.
         /// </summary>

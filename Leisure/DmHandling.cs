@@ -14,12 +14,13 @@ namespace Leisure
             {
                 GameInstance gtoset = playingUsers[msg.Author.Id].Games.First(instance => instance.Id == index);
                 playingUsers[msg.Author.Id].CurrentGame = gtoset; //TODO: Make this actually work!
-                await playingUsers[msg.Author.Id].CurrentGame.OnMessage(message[1], String.Join(" ", message[2..]), msg);
-                
+                await playingUsers[msg.Author.Id].CurrentGame
+                    .OnMessage(message[1], String.Join(" ", message[2..]), msg);
             }
             else
             {
-                await playingUsers[msg.Author.Id].CurrentGame.OnMessage(message[0], String.Join(" ", message[1..]), msg);
+                await playingUsers[msg.Author.Id].CurrentGame
+                    .OnMessage(message[0], String.Join(" ", message[1..]), msg);
             }
         }
     }

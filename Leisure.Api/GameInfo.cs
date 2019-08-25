@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using Discord;
 
 namespace Leisure
@@ -14,7 +13,7 @@ namespace Leisure
         /// The full name of the game, that will be seen by the players.
         /// </summary>
         public abstract string Name { get; }
-        
+
         /// <summary>
         /// A description for the game, that will be seen by players if they wish.
         /// </summary>
@@ -24,12 +23,12 @@ namespace Leisure
         /// The version of the game. 
         /// </summary>
         public virtual Version Version => GetType().Assembly.GetName().Version;
-        
+
         /// <summary>
         /// The author(s) of the games.
         /// </summary>
         public abstract string Author { get; }
-        
+
         /// <summary>
         /// A short description of the amount of players a game can accept.
         /// </summary>
@@ -39,14 +38,14 @@ namespace Leisure
         /// A short, perhaps acronymified name used for joining the game.
         /// </summary>
         public abstract string Prefix { get; }
-        
+
         /// <summary>
         /// Checks whether a certain number of players is valid for a game.
         /// </summary>
         /// <param name="i">Amount of players to check.</param>
         /// <returns>True if the amount is valid.</returns>
         public abstract bool IsValidPlayerCount(int i);
-        
+
         /// <summary>
         /// Creates the game.
         /// </summary>
