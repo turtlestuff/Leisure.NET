@@ -11,7 +11,6 @@ namespace DemoGame
         public override string Author => "Leisure.NET Contributors";
         public override string Prefix => "demo";
         public override string PlayerCountDescription => "3 players only";
-
         public override GameInstance CreateGame(int id, HashSet<IUser> players) => new DemoGameInstance(id, players);
         public override bool IsValidPlayerCount(int i) => i == 1;
     }

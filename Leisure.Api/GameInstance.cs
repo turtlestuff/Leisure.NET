@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 
@@ -38,10 +40,14 @@ namespace Leisure
         /// <summary>
         /// Ran when Leisure.NET detects a message for your game.
         /// </summary>
-        /// <param name="command">The command the user sent to the game</param>
-        /// <param name="args">Any arguments the user sent</param>
         /// <param name="msg">The message sent</param>
-        public abstract Task OnMessage(string command, string args, IUserMessage msg);
+        /// <param name="pos">The position at which commands to the game start</param>
+        public abstract Task OnMessage(IUserMessage msg, int pos);
+
+        /// <summary>
+        /// Invoked when the game has signaled that it is about to close.
+        /// </summary>
+        public event EventHandler? Closing;
 
         /// <summary>
         /// Broadcasts a message to every user in the game.
@@ -84,16 +90,18 @@ namespace Leisure
         protected async Task BroadcastExcluding(string text, bool isTTS = false, Embed? embed = default,
             params IUser[] exclude)
         {
-            var players = Players;
-            foreach (var e in exclude)
-            {
-                players.RemoveWhere(user => user.Id == e.Id);
-            }
-
-            foreach (var p in players)
+            foreach (var p in Players.Except(exclude, DiscordComparers.UserComparer))
             {
                 await p.SendMessageAsync(text, isTTS, embed);
             }
+        }
+
+        /// <summary>
+        /// Invokes the <see cref="Closing"/> event from derived classes.
+        /// </summary>
+        protected void OnClosing()
+        {
+            Closing?.Invoke(this, EventArgs.Empty);
         }
     }
 }

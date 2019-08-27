@@ -12,15 +12,15 @@ namespace Leisure
     {
         static async Task ParseGuildMessage(SocketUserMessage msg)
         {
-            int pos = 0;
+            var pos = 0;
             // Is this a leisure command?
             if (msg.HasStringPrefix("leisure:", ref pos))
             {
                 await ParseLeisureCommand(msg, pos);
             }
 
-            // Search through installed installedGames to find one with the prefix. If one is found, try and parse the command
-            var game = installedGames.FirstOrDefault(game => msg.HasStringPrefix(game.Prefix + ":", ref pos));
+            // Search through installed InstalledGames to find one with the prefix. If one is found, try and parse the command
+            var game = InstalledGames.FirstOrDefault(game => msg.HasStringPrefix(game.Prefix + ":", ref pos));
             if (game != default)
             {
                 await ParseGameCommand(game, msg, pos);
@@ -32,13 +32,13 @@ namespace Leisure
             switch (msg.Content[pos..])
             {
                 case "join":
-                    if (startingGames.TryGetValue(msg.Channel, out var startingGame))
+                    if (Lobbies.TryGetValue(msg.Channel, out var startingGame))
                         await JoinExistingLobby(game, msg, startingGame);
                     else
                         await StartNewLobby(game, msg);
 
                     return;
-                case "close" when startingGames.TryGetValue(msg.Channel, out var newGame)
+                case "close" when Lobbies.TryGetValue(msg.Channel, out var newGame)
                                   && newGame.StartingUser == msg.Author:
                     await CloseLobby(game, msg, newGame);
                     return;
@@ -47,9 +47,9 @@ namespace Leisure
             }
         }
 
-        static async Task CloseLobby(GameInfo game, SocketUserMessage msg, GameLobby newGame)
+        static async Task CloseLobby(GameInfo game, SocketUserMessage msg, GameLobby lobby)
         {
-            if (!game.IsValidPlayerCount(newGame.Players.Count))
+            if (!game.IsValidPlayerCount(lobby.Players.Count))
             {
                 await msg.Channel.SendMessageAsync("Not a valid amount of players for this game. Game requires: " +
                                                    game.PlayerCountDescription);
@@ -57,22 +57,18 @@ namespace Leisure
             else
             {
                 await msg.Channel.SendMessageAsync("Starting game");
-                var inst = game.CreateGame(newGame.Id, newGame.Players);
-                foreach (var p in newGame.Players)
+                var newGame = game.CreateGame(lobby.Id, lobby.Players);
+                foreach (var gc in lobby.Players.Select(p => PlayingUsers.GetOrAdd(p, _ => new GameCollection())))
                 {
-                    if (playingUsers.ContainsKey(p.Id))
-                    {
-                        playingUsers[p.Id].Games.Add(inst);
-                    }
-                    else
-                    {
-                        playingUsers.Add(p.Id, new GameCollection(inst));
-                    }
+                    gc.Games.Add(newGame);
+                    gc.CurrentGame = newGame;
                 }
+
+                await newGame.Initialize();
             }
 
 
-            startingGames.Remove(msg.Channel);
+            Lobbies.TryRemove(msg.Channel, out _);
         }
 
         static async Task JoinExistingLobby(GameInfo game, SocketUserMessage msg, GameLobby gameLobby)
@@ -87,7 +83,7 @@ namespace Leisure
         {
             var number = Interlocked.Add(ref gameCount, 1);
             var newGame = new GameLobby(number, msg.Author, msg.Channel, game);
-            startingGames.Add(msg.Channel, newGame);
+            Lobbies.TryAdd(msg.Channel, newGame);
             await msg.Channel.SendMessageAsync("Opening game " + number.ToString());
         }
 
@@ -108,7 +104,7 @@ namespace Leisure
                     await msg.Channel.SendMessageAsync("Pong!");
                     return;
                 case var gameName
-                    when installedGames.FirstOrDefault(g => String.Equals(g.Prefix, gameName, StringComparison.Ordinal))
+                    when InstalledGames.FirstOrDefault(g => String.Equals(g.Prefix, gameName, StringComparison.Ordinal))
                         is GameInfo game:
                     await SendGame(game, msg);
                     return;
@@ -151,7 +147,7 @@ namespace Leisure
             var builder = new EmbedBuilder
             {
                 Title = "Available Games",
-                Description = string.Join("\n", installedGames.Select(game => $"**{game.Name}** ({game.Prefix}:)"))
+                Description = string.Join("\n", InstalledGames.Select(game => $"**{game.Name}** ({game.Prefix}:)"))
             };
 
             await msg.Channel.SendMessageAsync("", embed: builder.Build());

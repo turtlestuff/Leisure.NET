@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
@@ -13,13 +14,13 @@ namespace Leisure
 {
     static partial class Program
     {
-        static DiscordSocketClient client = default!;
+        public static DiscordSocketClient Client = default!;
 
-        static Dictionary<ulong, GameCollection> playingUsers = new Dictionary<ulong, GameCollection>();
+        public static ConcurrentDictionary<IUser, GameCollection> PlayingUsers = new ConcurrentDictionary<IUser, GameCollection>(DiscordComparers.UserComparer);
 
-        static ImmutableArray<GameInfo> installedGames;
+        static ImmutableArray<GameInfo> InstalledGames;
 
-        static Dictionary<IMessageChannel, GameLobby> startingGames = new Dictionary<IMessageChannel, GameLobby>();
+        static ConcurrentDictionary<IMessageChannel, GameLobby> Lobbies = new ConcurrentDictionary<IMessageChannel, GameLobby>();
 
         static int gameCount;
 
@@ -44,7 +45,7 @@ namespace Leisure
 
             var gameInfos = new List<GameInfo>();
 
-            // Find all the installedGames. The game DLL's name has to currently end in "Game". 
+            // Find all the InstalledGames. The game DLL's name has to currently end in "Game". 
             // TODO: Isolate each game to its own folder
             foreach (var asm in Directory.GetFiles("Games", "*Game.dll", SearchOption.AllDirectories))
             {
@@ -67,18 +68,18 @@ namespace Leisure
                 }
             }
 
-            installedGames = gameInfos.ToImmutableArray();
+            InstalledGames = gameInfos.ToImmutableArray();
 
-            client = new DiscordSocketClient();
-            client.MessageReceived += ClientOnMessageReceived;
-            client.Log += msg =>
+            Client = new DiscordSocketClient();
+            Client.MessageReceived += ClientOnMessageReceived;
+            Client.Log += msg =>
             {
                 Console.WriteLine(msg.ToString());
                 return Task.CompletedTask;
             };
 
-            await client.LoginAsync(TokenType.Bot, token);
-            await client.StartAsync();
+            await Client.LoginAsync(TokenType.Bot, token);
+            await Client.StartAsync();
 
             await Task.Delay(Timeout.Infinite);
         }
@@ -95,9 +96,8 @@ namespace Leisure
                 await ParseGuildMessage(msg);
                 return;
             }
-
-
-            if (msg.Author != client.CurrentUser)
+            
+            if (msg.Author != Client.CurrentUser)
                 await ParseDmMessage(msg);
         }
     }

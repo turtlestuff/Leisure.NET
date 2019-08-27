@@ -42,17 +42,5 @@ namespace Leisure
         /// The game that will be played when the lobby closes.
         /// </summary>
         public GameInfo GameInfo { get; }
-
-
-        /// <summary>
-        /// Closes the lobby and initializes the game.
-        /// </summary>
-        /// <returns>The initialized game.</returns>
-        public async Task<GameInstance> Start()
-        {
-            var game = GameInfo.CreateGame(Id, Players);
-            await game.Initialize();
-            return game;
-        }
     }
 }

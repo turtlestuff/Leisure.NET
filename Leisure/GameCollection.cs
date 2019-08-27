@@ -7,22 +7,19 @@ namespace Leisure
     /// </summary>
     public class GameCollection
     {
-        internal GameCollection(GameInstance startingGame)
+        public GameCollection()
         {
-            CurrentGame = startingGame;
-            Games = new List<GameInstance>();
-            Games.Add(startingGame);
         }
 
         /// <summary>
         /// The games which the user is in.
         /// </summary>
-        public List<GameInstance> Games { get; }
+        public HashSet<GameInstance> Games { get; } = new HashSet<GameInstance>();
 
         /// <summary>
         /// The game the user is currently interacting with.
         /// </summary>
-        public GameInstance CurrentGame;
+        public GameInstance CurrentGame = default!;
 
         /// <inheritdoc />
         public override string ToString()

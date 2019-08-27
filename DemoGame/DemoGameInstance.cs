@@ -16,11 +16,10 @@ namespace DemoGame
             await Broadcast("Ready!");
         }
 
-        public override async Task OnMessage(string command, string args, IUserMessage msg)
+        public override async Task OnMessage(IUserMessage msg, int pos)
         {
-            await BroadcastTo(command, false, default, msg.Author);
-            await BroadcastExcluding($"{msg.Author.Username}: {command}", false,
-                default, msg.Author);
+            await BroadcastExcluding($"{msg.Author.Username}: {msg.Content}", exclude: msg.Author);
+            await msg.AddReactionAsync(new Emoji("✅"));
         }
     }
 }
