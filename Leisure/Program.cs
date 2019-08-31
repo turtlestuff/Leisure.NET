@@ -18,7 +18,7 @@ namespace Leisure
 
         public static ConcurrentDictionary<IUser, GameCollection> PlayingUsers = new ConcurrentDictionary<IUser, GameCollection>(DiscordComparers.UserComparer);
 
-        static ImmutableArray<GameInfo> InstalledGames;
+        static ImmutableDictionary<string, GameInfo> InstalledGames = default!;
 
         static ConcurrentDictionary<IMessageChannel, GameLobby> Lobbies = new ConcurrentDictionary<IMessageChannel, GameLobby>();
 
@@ -31,7 +31,7 @@ namespace Leisure
             {
                 Console.WriteLine("\"token.txt\" doesn't exist. Enter token:");
                 token = Console.ReadLine();
-                Console.WriteLine("Create token.txt? [Y/n]");
+                Console.WriteLine("Create token.txt? [y/n]");
                 if (Console.ReadKey().Key != ConsoleKey.N)
                 {
                     await using var file = File.CreateText("token.txt");
@@ -43,7 +43,7 @@ namespace Leisure
                 token = File.ReadAllText("token.txt");
             }
 
-            var gameInfos = new List<GameInfo>();
+            var gameInfos = ImmutableDictionary.CreateBuilder<string, GameInfo>();
 
             // Find all the InstalledGames. The game DLL's name has to currently end in "Game". 
             // TODO: Isolate each game to its own folder
@@ -60,7 +60,8 @@ namespace Leisure
                     // Find every class that implements GameInfo and make a new instance of it.
                     gameInfos.AddRange(from t in assembly.ExportedTypes
                         where t.IsSubclassOf(typeof(GameInfo))
-                        select (GameInfo) Activator.CreateInstance(t)!);
+                        let info = (GameInfo) Activator.CreateInstance(t)!
+                        select new KeyValuePair<String, GameInfo>(info.Prefix, info));
                 }
                 catch (Exception ex)
                 {
@@ -68,7 +69,7 @@ namespace Leisure
                 }
             }
 
-            InstalledGames = gameInfos.ToImmutableArray();
+            InstalledGames = gameInfos.ToImmutable();
 
             Client = new DiscordSocketClient();
             Client.MessageReceived += ClientOnMessageReceived;
@@ -96,9 +97,18 @@ namespace Leisure
                 await ParseGuildMessage(msg);
                 return;
             }
-            
-            if (msg.Author != Client.CurrentUser)
-                await ParseDmMessage(msg);
+
+            if (msg.Author != Client.CurrentUser && PlayingUsers.ContainsKey(msg.Author))
+            {
+                try
+                {
+                    await ParseDmMessage(msg);
+                }
+                catch (Exception ex)
+                {
+                    await msg.Author.SendMessageAsync(ex.Message);
+                }
+            }
         }
     }
 }

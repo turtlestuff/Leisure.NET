@@ -12,18 +12,19 @@ namespace Leisure
     {
         static async Task ParseGuildMessage(SocketUserMessage msg)
         {
-            var pos = 0;
             // Is this a leisure command?
-            if (msg.HasStringPrefix("leisure:", ref pos))
+            var splits = msg.Content.Split(":");
+            var start = splits[0];
+            
+            if (start == "leisure")
             {
-                await ParseLeisureCommand(msg, pos);
+                await ParseLeisureCommand(msg, splits[0].Length + 1);
             }
 
             // Search through installed InstalledGames to find one with the prefix. If one is found, try and parse the command
-            var game = InstalledGames.FirstOrDefault(game => msg.HasStringPrefix(game.Prefix + ":", ref pos));
-            if (game != default)
+            if (InstalledGames.TryGetValue(start, out var game))
             {
-                await ParseGameCommand(game, msg, pos);
+                await ParseGameCommand(game, msg, splits[0].Length + 1);
             }
         }
 
@@ -57,20 +58,23 @@ namespace Leisure
             else
             {
                 await msg.Channel.SendMessageAsync("Starting game");
-                var newGame = game.CreateGame(lobby.Id, lobby.Players);
-                foreach (var gc in lobby.Players.Select(p => PlayingUsers.GetOrAdd(p, _ => new GameCollection())))
+                var newGame = game.CreateGame(Client, lobby.Players, lobby.Id);
+                
+                foreach (var p in lobby.Players)
                 {
-                    gc.Games.Add(newGame);
+                    var gc = PlayingUsers.GetOrAdd(p, _ => new GameCollection());
+                    gc.Games.TryAdd(newGame.Id, newGame);
                     gc.CurrentGame = newGame;
                 }
 
+                newGame.Closing += CloseGame;
                 await newGame.Initialize();
             }
 
 
             Lobbies.TryRemove(msg.Channel, out _);
         }
-
+        
         static async Task JoinExistingLobby(GameInfo game, SocketUserMessage msg, GameLobby gameLobby)
         {
             if (gameLobby.Players.Add(msg.Author))
@@ -103,9 +107,7 @@ namespace Leisure
                 case "ping":
                     await msg.Channel.SendMessageAsync("Pong!");
                     return;
-                case var gameName
-                    when InstalledGames.FirstOrDefault(g => String.Equals(g.Prefix, gameName, StringComparison.Ordinal))
-                        is GameInfo game:
+                case var gameName when InstalledGames.TryGetValue(gameName, out var game):
                     await SendGame(game, msg);
                     return;
                 default:
@@ -147,7 +149,7 @@ namespace Leisure
             var builder = new EmbedBuilder
             {
                 Title = "Available Games",
-                Description = string.Join("\n", InstalledGames.Select(game => $"**{game.Name}** ({game.Prefix}:)"))
+                Description = string.Join("\n", InstalledGames.Values.Select(game => $"**{game.Name}** ({game.Prefix}:)"))
             };
 
             await msg.Channel.SendMessageAsync("", embed: builder.Build());

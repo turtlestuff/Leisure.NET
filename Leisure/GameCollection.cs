@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 
 namespace Leisure
@@ -7,19 +8,15 @@ namespace Leisure
     /// </summary>
     public class GameCollection
     {
-        public GameCollection()
-        {
-        }
-
         /// <summary>
         /// The games which the user is in.
         /// </summary>
-        public HashSet<GameInstance> Games { get; } = new HashSet<GameInstance>();
+        public ConcurrentDictionary<int, GameInstance> Games { get; } = new ConcurrentDictionary<int, GameInstance>();
 
         /// <summary>
         /// The game the user is currently interacting with.
         /// </summary>
-        public GameInstance CurrentGame = default!;
+        public GameInstance CurrentGame { get; set; } = default!;
 
         /// <inheritdoc />
         public override string ToString()

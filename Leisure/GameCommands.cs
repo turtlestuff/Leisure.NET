@@ -9,24 +9,59 @@ namespace Leisure
     {
         static Task ParseDmMessage(IUserMessage msg)
         {
-            var splits = msg.Content.Split(" ");
-            GameInstance game;
-            int pos = 0;
-            if (int.TryParse(splits[0], out var id))
+            var pos = 0;
+            if (char.IsNumber(msg.Content.FirstOrDefault()))
             {
-                game = PlayingUsers[msg.Author].Games.FirstOrDefault(instance => instance.Id == id);
+                var message = msg.Content.AsSpan();
+                bool whitespace = false;
+                foreach (var c in message)
+                {
+                    if (char.IsNumber(c))
+                        if (whitespace)
+                            break;
+                        else
+                            pos++;
+
+                    if (char.IsWhiteSpace(c))
+                    {
+                        pos++;
+                        whitespace = true;
+                    }
+                }
                 
-                if (game == default)
-                    throw new ArgumentException("Provided ID is not a valid game ID.");
+                if (int.TryParse(message[..pos], out var id))
+                {
+                    if (!PlayingUsers[msg.Author].Games.TryGetValue(id, out var game))
+                        throw new ArgumentException("Provided ID is not a valid game ID.");
 
-                pos = splits[0].Length - 1;
+                    PlayingUsers[msg.Author].CurrentGame = game;
+                }
             }
-            else
+
+            return PlayingUsers[msg.Author].CurrentGame.OnMessage(msg, pos);
+        }
+        
+        static void CloseGame(object? sender, EventArgs e)
+        {
+            var game = (GameInstance) sender!;
+            foreach (var p in game.Players)
             {
-                game = PlayingUsers[msg.Author].CurrentGame;
+                var gc = PlayingUsers[p];
+                gc.Games.TryRemove(game.Id, out _);
+
+                if (gc.Games.Count == 0)
+                { 
+                    PlayingUsers.TryRemove(p, out _);
+                    p.SendMessageAsync("You are in no more games. Thanks for playing with Leisure!");
+                }
+                else
+                {
+                    gc.CurrentGame = gc.Games.Last().Value;
+                    p.SendMessageAsync("You have been placed into game " + gc.CurrentGame.Id.ToString());
+                }    
             }
 
-            return game.OnMessage(msg, pos);
+            game.Players.Clear();
         }
     }
 }

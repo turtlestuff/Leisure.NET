@@ -9,15 +9,17 @@ namespace Leisure
     /// <summary>
     /// Represents an instance of a game.
     /// </summary>
-    public abstract class GameInstance
+    public abstract class GameInstance : IEquatable<GameInstance>
     {
         /// <summary>
         /// Creates a new instance of a game.
         /// </summary>
+        /// <param name="client">The client which the new game will use.</param>
         /// <param name="id">The ID of the new game.</param>
         /// <param name="players">The players that are in the game.</param>
-        protected GameInstance(int id, HashSet<IUser> players)
+        protected GameInstance(IDiscordClient client, HashSet<IUser> players, int id)
         {
+            Client = client;
             Id = id;
             Players = players;
         }
@@ -31,6 +33,11 @@ namespace Leisure
         /// Get the ID of the game.
         /// </summary>
         public int Id { get; }
+        
+        /// <summary>
+        /// Gets the client that is running the game.
+        /// </summary>
+        public IDiscordClient Client { get; }
 
         /// <summary>
         /// This is ran when the game has been closed, and is ready to be initialized.
@@ -56,7 +63,7 @@ namespace Leisure
         /// <param name="isTTS">Message send as TTS? (default is false)</param>
         /// <param name="embed">Embed to send (default is none)</param>
         /// <returns></returns>
-        protected async Task Broadcast(string text, bool isTTS = false, Embed? embed = default)
+        public async Task Broadcast(string text, bool isTTS = false, Embed? embed = default)
         {
             foreach (var player in Players)
             {
@@ -71,7 +78,7 @@ namespace Leisure
         /// <param name="isTTS">Message send as TTS? (default is false)</param>
         /// <param name="embed">Embed to send (default is none)</param>
         /// <param name="players">Users to send.</param>
-        protected async Task BroadcastTo(string text, bool isTTS = false, Embed? embed = default,
+        public async Task BroadcastTo(string text, bool isTTS = false, Embed? embed = default,
             params IUser[] players)
         {
             foreach (var player in players)
@@ -87,7 +94,7 @@ namespace Leisure
         /// <param name="isTTS">Message send as TTS? (default is false)</param>
         /// <param name="embed">Embed to send (default is none)</param>
         /// <param name="exclude">Users to exclude.</param>
-        protected async Task BroadcastExcluding(string text, bool isTTS = false, Embed? embed = default,
+        public async Task BroadcastExcluding(string text, bool isTTS = false, Embed? embed = default,
             params IUser[] exclude)
         {
             foreach (var p in Players.Except(exclude, DiscordComparers.UserComparer))
@@ -103,5 +110,29 @@ namespace Leisure
         {
             Closing?.Invoke(this, EventArgs.Empty);
         }
+
+        /// <inheritdoc />
+        public bool Equals(GameInstance? other) => Id == other?.Id;
+
+        /// <inheritdoc />
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            if (ReferenceEquals(this, obj)) return true;
+            return obj.GetType() == GetType() && Equals((GameInstance) obj);
+        }
+
+        /// <summary>
+        /// Compares two game instances for equality.
+        /// </summary>
+        public static bool operator ==(GameInstance? left, GameInstance? right) => left?.Equals(right) ?? false;
+
+        /// <summary>
+        /// Compares two game instances for inequality.
+        /// </summary>
+        public static Boolean operator !=(GameInstance? left, GameInstance? right) => !(left == right);
+
+        /// <inheritdoc />
+        public override int GetHashCode() => HashCode.Combine(Id, Client);
     }
 }

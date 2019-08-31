@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Reflection;
 using Discord;
 
 namespace Leisure
@@ -22,7 +23,7 @@ namespace Leisure
         /// <summary>
         /// The version of the game. 
         /// </summary>
-        public virtual Version Version => GetType().Assembly.GetName().Version;
+        public virtual string Version => GetType().Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>().InformationalVersion;
 
         /// <summary>
         /// The author(s) of the games.
@@ -44,14 +45,15 @@ namespace Leisure
         /// </summary>
         /// <param name="i">Amount of players to check.</param>
         /// <returns>True if the amount is valid.</returns>
-        public abstract bool IsValidPlayerCount(int i);
+        public virtual bool IsValidPlayerCount(int i) => true;
 
         /// <summary>
         /// Creates the game.
         /// </summary>
-        /// <param name="id">The ID of the game.</param>
+        /// <param name="client">The client the new game will use.</param>
         /// <param name="players">The players in the new game.</param>
+        /// <param name="id">The ID of the game.</param>
         /// <returns>The new <see cref="Leisure.GameInstance"/></returns>
-        public abstract GameInstance CreateGame(int id, HashSet<IUser> players);
+        public abstract GameInstance CreateGame(IDiscordClient client, HashSet<IUser> players, int id);
     }
 }
