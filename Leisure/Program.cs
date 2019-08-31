@@ -18,11 +18,13 @@ namespace Leisure
 
         public static ConcurrentDictionary<IUser, GameCollection> PlayingUsers = new ConcurrentDictionary<IUser, GameCollection>(DiscordComparers.UserComparer);
 
-        static ImmutableDictionary<string, GameInfo> InstalledGames = default!;
+        public static ImmutableDictionary<string, GameInfo> InstalledGames = default!;
 
-        static ConcurrentDictionary<IMessageChannel, GameLobby> Lobbies = new ConcurrentDictionary<IMessageChannel, GameLobby>();
+        public static ConcurrentDictionary<IMessageChannel, GameLobby> Lobbies = new ConcurrentDictionary<IMessageChannel, GameLobby>();
 
-        static int gameCount;
+        public static int GameCount;
+        
+        public static Color LeisureColor = new Color(160, 28, 195);
 
         static async Task Main()
         {

@@ -24,7 +24,7 @@ namespace DemoGame
             ServiceProvider = new ServiceCollection().AddSingleton(this).BuildServiceProvider();
             Commands = new CommandService();
             await Commands.AddModuleAsync<DemoGameModule>(ServiceProvider);
-            await Broadcast("Ready game #" + Id.ToString());
+            await Broadcast("Ready game #" + Id);
         }
         
         public override async Task OnMessage(IUserMessage msg, int pos)
@@ -33,7 +33,7 @@ namespace DemoGame
 
             if (!result.IsSuccess && result.Error == CommandError.UnknownCommand)
             {
-                await BroadcastExcluding($"*{Id.ToString()}* {msg.Author.Username}: {msg.Content}", exclude: msg.Author);
+                await BroadcastExcluding($"*{Id}* {msg.Author.Username}: {msg.Content}", exclude: msg.Author);
                 await msg.AddReactionAsync(new Emoji("✅"));
             }
         }

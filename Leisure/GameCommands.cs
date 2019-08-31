@@ -57,7 +57,7 @@ namespace Leisure
                 else
                 {
                     gc.CurrentGame = gc.Games.Last().Value;
-                    p.SendMessageAsync("You have been placed into game " + gc.CurrentGame.Id.ToString());
+                    p.SendMessageAsync("You have been placed into game " + gc.CurrentGame.Id);
                 }    
             }
 

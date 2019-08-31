@@ -10,7 +10,7 @@ namespace DemoGame
         [Command("close")]
         public async Task Close()
         {
-            await Game.Broadcast("Closing game " + Game.Id.ToString());
+            await Game.Broadcast("Closing game " + Game.Id);
             Game.Close();
         }
     }

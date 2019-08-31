@@ -41,6 +41,11 @@ namespace Leisure
         public abstract string Prefix { get; }
 
         /// <summary>
+        /// Gets an icon to display for the game. <see langword="null" /> represents an empty icon.
+        /// </summary>
+        public abstract string? IconUrl { get; }
+
+        /// <summary>
         /// Checks whether a certain number of players is valid for a game.
         /// </summary>
         /// <param name="i">Amount of players to check.</param>
