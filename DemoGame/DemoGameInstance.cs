@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
@@ -33,7 +32,7 @@ namespace DemoGame
 
             if (!result.IsSuccess && result.Error == CommandError.UnknownCommand)
             {
-                await BroadcastExcluding($"*{Id}* {msg.Author.Username}: {msg.Content}", exclude: msg.Author);
+                await Broadcast($"**#{Id} {msg.Author.Username}:** {msg.Content}");
                 await msg.AddReactionAsync(new Emoji("✅"));
             }
         }

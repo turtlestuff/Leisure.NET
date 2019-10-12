@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -18,13 +17,15 @@ namespace Leisure
 
         public static ConcurrentDictionary<IUser, GameCollection> PlayingUsers = new ConcurrentDictionary<IUser, GameCollection>(DiscordComparers.UserComparer);
 
-        public static ImmutableDictionary<string, GameInfo> InstalledGames = default!;
+        public static Dictionary<string, GameInfo> InstalledGames = default!;
 
         public static ConcurrentDictionary<IMessageChannel, GameLobby> Lobbies = new ConcurrentDictionary<IMessageChannel, GameLobby>();
 
         public static int GameCount;
         
         public static Color LeisureColor = new Color(160, 28, 195);
+        
+        public static Random Rng = new Random();
 
         static async Task Main()
         {
@@ -45,7 +46,7 @@ namespace Leisure
                 token = File.ReadAllText("token.txt");
             }
 
-            var gameInfos = ImmutableDictionary.CreateBuilder<string, GameInfo>();
+            var gameInfos = new Dictionary<string, GameInfo>();
 
             // Find all the InstalledGames. The game DLL's name has to currently end in "Game". 
             // TODO: Isolate each game to its own folder
@@ -60,10 +61,13 @@ namespace Leisure
                     var assembly = Assembly.LoadFrom(asm);
 
                     // Find every class that implements GameInfo and make a new instance of it.
-                    gameInfos.AddRange(from t in assembly.ExportedTypes
+                    foreach (var (prefix, info) in from t in assembly.ExportedTypes
                         where t.IsSubclassOf(typeof(GameInfo))
                         let info = (GameInfo) Activator.CreateInstance(t)!
-                        select new KeyValuePair<String, GameInfo>(info.Prefix, info));
+                        select (info.Prefix, GameInfo: info))
+                    {
+                        gameInfos.Add(prefix, info);
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -71,7 +75,7 @@ namespace Leisure
                 }
             }
 
-            InstalledGames = gameInfos.ToImmutable();
+            InstalledGames = gameInfos;
 
             Client = new DiscordSocketClient();
             Client.MessageReceived += ClientOnMessageReceived;

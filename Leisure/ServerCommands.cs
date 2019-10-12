@@ -2,6 +2,8 @@ using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
 using Discord;
@@ -11,13 +13,18 @@ namespace Leisure
 {
     static partial class Program
     {
+        static string GetRandomGamePrefix() => InstalledGames.Keys.ElementAt(Rng.Next(0, InstalledGames.Keys.Count));
+
+        #region Parsing Helpers
+        
         static async Task ParseGuildMessage(SocketUserMessage msg)
         {
             // Is this a leisure command?
             var splits = msg.Content.Split(":");
             var start = splits[0];
             
-            if (start == "leisure")
+            // If someone doesn't understand what <game> means in the help, they'll figure out the hard way
+            if (start == "leisure" || start == "<game>")
             {
                 await ParseLeisureCommand(msg, splits[0].Length + 1);
             }
@@ -28,6 +35,20 @@ namespace Leisure
                 await ParseGameCommand(game, msg, splits[0].Length + 1);
             }
         }
+        
+        static Task ParseLeisureCommand(SocketUserMessage msg, int pos) =>
+            msg.Content[pos..] switch
+            {
+                "help" => SendHelp(msg),
+                "games" => SendGames(msg),
+                var s when s == "ping" || s == "about" => SendAbout(msg),
+                var gameName when InstalledGames.TryGetValue(gameName, out var game) => SendGame(game, msg),
+                var s when s == "join" || s == "spectate" || s == "close" => msg.Channel.SendMessageAsync(
+                    $"Use the prefix of a game (e.g. `{GetRandomGamePrefix()}`) to {msg.Content[pos..]} a game."),
+                "<game>" => msg.Channel.SendMessageAsync(
+                    $"Use the prefix of a game (e.g. `leisure:{GetRandomGamePrefix()}`) to get more information about a game."),
+                _ => Task.CompletedTask
+            };
 
         static async Task ParseGameCommand(GameInfo game, SocketUserMessage msg, int pos)
         {
@@ -38,7 +59,9 @@ namespace Leisure
                         await JoinExistingLobby(game, msg, startingGame);
                     else
                         await StartNewLobby(game, msg);
-
+                    return;
+                case "spectate":
+                    // NYI
                     return;
                 case "close" when Lobbies.TryGetValue(msg.Channel, out var newGame)
                                   && newGame.StartingUser == msg.Author:
@@ -48,7 +71,11 @@ namespace Leisure
                     return;
             }
         }
+        
+        #endregion
 
+        #region Lobby Helpers
+        
         static async Task CloseLobby(GameInfo game, SocketUserMessage msg, GameLobby lobby)
         {
             if (!game.IsValidPlayerCount(lobby.Players.Count))
@@ -111,29 +138,11 @@ namespace Leisure
             
             await msg.Channel.SendMessageAsync("", embed: builder.Build());
         }
-
-        static async Task ParseLeisureCommand(SocketUserMessage msg, int pos)
-        {
-            switch (msg.Content[pos..])
-            {
-                case "help":
-                    await SendHelp(msg);
-                    return;
-                case "games":
-                    await SendGames(msg);
-                    return;
-                case "about":
-                case "ping":
-                    await SendAbout(msg);
-                    return;
-                case var gameName when InstalledGames.TryGetValue(gameName, out var game):
-                    await SendGame(game, msg);
-                    return;
-                default:
-                    return;
-            }
-        }
-
+        
+        #endregion
+        
+        #region Embed Helpers 
+        
         static async Task SendAbout(SocketUserMessage msg)
         {
             var offset = DateTime.Now;
@@ -160,7 +169,9 @@ namespace Leisure
                             Name = "Statistics",
                             Value = $@"**Heartbeat:** {Client.Latency}ms
 **API Latency:** {(DateTime.Now - offset).Milliseconds}ms
-**Working Set:** {Process.GetCurrentProcess().WorkingSet64 / 1E6:F} MB"
+**Working Set:** {Process.GetCurrentProcess().WorkingSet64 / 1E6:F} MB
+**.NET Version:** {RuntimeInformation.FrameworkDescription}
+**Operating System:** {RuntimeInformation.OSDescription}"
                         },
                         new EmbedFieldBuilder
                         {
@@ -181,7 +192,7 @@ Source code for Leisure.NET is available on [GitHub](https://github.com/turtlest
         {
             var builder = new EmbedBuilder
             {
-                Author = new EmbedAuthorBuilder()
+                Author = new EmbedAuthorBuilder
                 {
                     IconUrl = Client.CurrentUser.GetAvatarUrl(),
                     Name = "Leisure Help"
@@ -192,18 +203,22 @@ Source code for Leisure.NET is available on [GitHub](https://github.com/turtlest
                     new EmbedFieldBuilder
                     {
                         Name = "Leisure Commands",
-                        Value = @"**leisure:ping**: Makes sure the bot is online
-**leisure:help**: Gets this message
-**leisure:games**: Gets the list of the available games
-**leisure:<game>**: Gets information about the specified game"
+                        Value = @"**leisure:ping** - Makes sure the bot is online
+**leisure:help** - Gets this message
+**leisure:games** - Gets the list of the available games
+**leisure:<game>** - Gets information about the specified game"
                     },
                     new EmbedFieldBuilder
                     {
                         Name = "Game Commands",
-                        Value = @"**<game>:join**: Starts or joins a lobby in the current channel
-**<game>:spectate**: Adds you as a spectator to the lobby in the current channel
-**<game>:close**: If you created the lobby in the current channel, closes it and starts the game"
+                        Value = @"**<game>:join** - Starts or joins a lobby in the current channel
+**<game>:spectate** - Adds you as a spectator to the lobby in the current channel
+**<game>:close** - If you created the lobby in the current channel, closes it and starts the game"
                     }
+                },
+                Footer = new EmbedFooterBuilder
+                {
+                    Text = "Replace <game> with the game prefix of your choice. To find out about the available game and game prefixes, type leisure:help"
                 }
             };
 
@@ -238,5 +253,7 @@ Source code for Leisure.NET is available on [GitHub](https://github.com/turtlest
 
             await msg.Channel.SendMessageAsync("", embed: builder.Build());
         }
+        
+        #endregion
     }
 }

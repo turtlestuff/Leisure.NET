@@ -78,8 +78,7 @@ namespace Leisure
         /// <param name="isTTS">Message send as TTS? (default is false)</param>
         /// <param name="embed">Embed to send (default is none)</param>
         /// <param name="players">Users to send.</param>
-        public async Task BroadcastTo(string text, bool isTTS = false, Embed? embed = default,
-            params IUser[] players)
+        public async Task BroadcastTo(string text, bool isTTS = false, Embed? embed = default, params IUser[] players)
         {
             foreach (var player in players)
             {
@@ -94,8 +93,7 @@ namespace Leisure
         /// <param name="isTTS">Message send as TTS? (default is false)</param>
         /// <param name="embed">Embed to send (default is none)</param>
         /// <param name="exclude">Users to exclude.</param>
-        public async Task BroadcastExcluding(string text, bool isTTS = false, Embed? embed = default,
-            params IUser[] exclude)
+        public async Task BroadcastExcluding(string text, bool isTTS = false, Embed? embed = default, params IUser[] exclude)
         {
             foreach (var p in Players.Except(exclude, DiscordComparers.UserComparer))
             {
