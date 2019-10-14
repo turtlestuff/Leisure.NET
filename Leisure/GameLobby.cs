@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Threading.Tasks;
 using Discord;
 
@@ -21,7 +22,7 @@ namespace Leisure
         /// <summary>
         /// The members in the lobby that will join the game when it starts.
         /// </summary>
-        public HashSet<IUser> Players { get; } = new HashSet<IUser>();
+        public ImmutableArray<IUser>.Builder Players { get; } = ImmutableArray.CreateBuilder<IUser>();
 
         /// <summary>
         /// The ID of the game that will start.

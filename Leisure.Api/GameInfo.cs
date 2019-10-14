@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Reflection;
 using Discord;
 
@@ -11,12 +12,12 @@ namespace Leisure
     public abstract class GameInfo
     {
         /// <summary>
-        /// The full name of the game, that will be seen by the players.
+        /// The full name of the game.
         /// </summary>
         public abstract string Name { get; }
 
         /// <summary>
-        /// A description for the game, that will be seen by players if they wish.
+        /// A description of the game.
         /// </summary>
         public abstract string Description { get; }
 
@@ -36,7 +37,7 @@ namespace Leisure
         public abstract string PlayerCountDescription { get; }
 
         /// <summary>
-        /// A short, perhaps acronymified name used for joining the game.
+        /// The prefix used by the game. The prefix is used to get information about the game and open new lobbies for the game.
         /// </summary>
         public abstract string Prefix { get; }
 
@@ -48,9 +49,9 @@ namespace Leisure
         /// <summary>
         /// Checks whether a certain number of players is valid for a game.
         /// </summary>
-        /// <param name="i">Amount of players to check.</param>
+        /// <param name="playerCount">Amount of players to check.</param>
         /// <returns>True if the amount is valid.</returns>
-        public virtual bool IsValidPlayerCount(int i) => true;
+        public virtual bool IsValidPlayerCount(int playerCount) => true;
 
         /// <summary>
         /// Creates the game.
@@ -59,6 +60,6 @@ namespace Leisure
         /// <param name="players">The players in the new game.</param>
         /// <param name="id">The ID of the game.</param>
         /// <returns>The new <see cref="Leisure.GameInstance"/></returns>
-        public abstract GameInstance CreateGame(IDiscordClient client, HashSet<IUser> players, int id);
+        public abstract GameInstance CreateGame(IDiscordClient client, ImmutableArray<IUser> players, int id);
     }
 }

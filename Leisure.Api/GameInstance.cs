@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
 using Discord;
@@ -17,7 +17,7 @@ namespace Leisure
         /// <param name="client">The client which the new game will use.</param>
         /// <param name="id">The ID of the new game.</param>
         /// <param name="players">The players that are in the game.</param>
-        protected GameInstance(IDiscordClient client, HashSet<IUser> players, int id)
+        protected GameInstance(IDiscordClient client, ImmutableArray<IUser> players, int id)
         {
             Client = client;
             Id = id;
@@ -27,7 +27,7 @@ namespace Leisure
         /// <summary>
         /// Gets the players playing the game.
         /// </summary>
-        public HashSet<IUser> Players { get; }
+        public ImmutableArray<IUser> Players { get; }
 
         /// <summary>
         /// Get the ID of the game.
@@ -55,6 +55,11 @@ namespace Leisure
         /// Invoked when the game has signaled that it is about to close.
         /// </summary>
         public event EventHandler? Closing;
+        
+        /// <summary>
+        /// Invoked when the a user has requested to drop from the game.
+        /// </summary>
+        public event EventHandler<UserDroppingEventArgs>? UserDropping;
 
         /// <summary>
         /// Broadcasts a message to every user in the game.
@@ -107,6 +112,14 @@ namespace Leisure
         protected void OnClosing()
         {
             Closing?.Invoke(this, EventArgs.Empty);
+        }
+        
+        /// <summary>
+        /// Invokes the <see cref="UserDropping"/> event from derived classes.
+        /// </summary>
+        protected void OnDroppingPlayer(IUser user)
+        {
+            UserDropping?.Invoke(this, new UserDroppingEventArgs(user));
         }
 
         /// <inheritdoc />

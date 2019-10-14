@@ -65,7 +65,7 @@ namespace Leisure
                     return;
                 case "close" when Lobbies.TryGetValue(msg.Channel, out var newGame)
                                   && newGame.StartingUser == msg.Author:
-                    await CloseLobby(game, msg, newGame);
+                    await CloseLobby(game, msg.Channel, newGame);
                     return;
                 default:
                     return;
@@ -76,18 +76,18 @@ namespace Leisure
 
         #region Lobby Helpers
         
-        static async Task CloseLobby(GameInfo game, SocketUserMessage msg, GameLobby lobby)
+        static async Task CloseLobby(GameInfo game, ISocketMessageChannel channel, GameLobby lobby)
         {
             if (!game.IsValidPlayerCount(lobby.Players.Count))
             {
-                await msg.Channel.SendMessageAsync("Not a valid amount of players for this game. Game requires: " +
-                                                   game.PlayerCountDescription);
+                await channel.SendMessageAsync($@"**Lobby Closed**
+The lobby was closed, but an invalid amount of players were in the lobby. {game.Name} requires: {game.PlayerCountDescription}");
             }
             else
             {
-                await msg.Channel.SendMessageAsync("Starting game");
-                var newGame = game.CreateGame(Client, lobby.Players, lobby.Id);
-                
+                await channel.SendMessageAsync($"Lobby #{lobby.Id} has closed and the game is now starting.");
+                var newGame = game.CreateGame(Client, lobby.Players.ToImmutable(), lobby.Id);
+
                 foreach (var p in lobby.Players)
                 {
                     var gc = PlayingUsers.GetOrAdd(p, _ => new GameCollection());
@@ -96,26 +96,31 @@ namespace Leisure
                 }
 
                 newGame.Closing += CloseGame;
+                newGame.UserDropping += DropPlayer;
+                
                 await newGame.Initialize();
             }
 
 
-            Lobbies.TryRemove(msg.Channel, out _);
+            Lobbies.TryRemove(channel, out _);
         }
         
         static async Task JoinExistingLobby(GameInfo game, SocketUserMessage msg, GameLobby gameLobby)
         {
-            if (gameLobby.Players.Add(msg.Author))
-                await msg.Channel.SendMessageAsync("Joined game");
+            if (gameLobby.Players.Contains(msg.Author))
+                await msg.Channel.SendMessageAsync($"{msg.Author.Mention}, you have already joined this lobby.");
             else
-                await msg.Channel.SendMessageAsync("You already joined this game");
+            { 
+                gameLobby.Players.Add(msg.Author);
+                await msg.Channel.SendMessageAsync($"**{msg.Author}** has joined the lobby.");
+            }
         }
 
         static async Task StartNewLobby(GameInfo game, SocketUserMessage msg)
         {
             var number = Interlocked.Add(ref GameCount, 1);
-            var newGame = new GameLobby(number, msg.Author, msg.Channel, game);
-            Lobbies.TryAdd(msg.Channel, newGame);
+            var lobby = new GameLobby(number, msg.Author, msg.Channel, game);
+            Lobbies.TryAdd(msg.Channel, lobby);
             
             var builder = new EmbedBuilder
             {
@@ -127,6 +132,7 @@ namespace Leisure
                     Name = $"Ready to play {game.Name}?"
                 },
                 Description = $@"
+{msg.Author.Mention} has opened lobby #{number}.
 • To join this game, type `{game.Prefix}:join`
 • To spectate this game, type `{game.Prefix}:spectate`
 • Once everyone has joined the lobby, {msg.Author.Mention} can use `{game.Prefix}:close` to start playing",
@@ -137,6 +143,7 @@ namespace Leisure
             }.WithCurrentTimestamp();
             
             await msg.Channel.SendMessageAsync("", embed: builder.Build());
+            _ = Task.Delay(TimeSpan.FromMinutes(5)).ContinueWith(t => CloseLobby(game, msg.Channel, lobby));
         }
         
         #endregion

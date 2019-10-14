@@ -5,6 +5,7 @@
         <OutputPath>../Leisure/bin/Debug/netcoreapp3.0/Games</OutputPath>
         <Nullable>enable</Nullable>
         <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+        <RootNamespace>MathOlympics</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
