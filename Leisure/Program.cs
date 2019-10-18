@@ -108,13 +108,7 @@ namespace Leisure
             {
                 try
                 {
-                    if (ParseDmMessage(msg) is var task && task is Task<Error> err)
-                    {
-                        await msg.Author.SendMessageAsync((await err).Message);
-                        return;
-                    }
-
-                    await task;
+                    await ParseDmMessage(msg);
                 }
                 catch (Exception ex)
                 {

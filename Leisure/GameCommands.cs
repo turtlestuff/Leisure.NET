@@ -7,19 +7,6 @@ namespace Leisure
 {
     static partial class Program
     {
-        /// <summary>
-        /// Used to avoid exceptions.
-        /// </summary>
-        struct Error
-        {
-            public Error(string message)
-            {
-                Message = message;
-            }
-            
-            public string Message { get; }
-        }
-
         static Task ParseDmMessage(IUserMessage msg)
         {
             var pos = 0;
@@ -56,14 +43,14 @@ namespace Leisure
                 }
                 else
                 {
-                    return Task.FromResult(new Error(
-                        $"*You are not playing in game {message[..pos].Trim().ToString()}. You are playing game(s): {string.Join(", ", PlayingUsers[msg.Author].Games.Keys)}.*"));
+                    throw new InvalidOperationException(
+                        $"*You are not playing in game {message[..pos].Trim().ToString()}. You are playing game(s): {string.Join(", ", PlayingUsers[msg.Author].Games.Keys)}.*");
                 }
             }
             else
             {
-                return Task.FromResult(new Error(
-                    $"*{message[..pos].Trim().ToString()} is not a valid game ID. You are playing game(s): {string.Join(", ", PlayingUsers[msg.Author].Games.Keys)}.*"));
+                throw new InvalidOperationException(
+                    $"*{message[..pos].Trim().ToString()} is not a valid game ID. You are playing game(s): {string.Join(", ", PlayingUsers[msg.Author].Games.Keys)}.*");
             }
 
             return message[pos..].Length != 0
@@ -71,7 +58,7 @@ namespace Leisure
                 : msg.Author.SendMessageAsync($"*You are now playing in game {message[..pos].Trim().ToString()}.*");
         }
 
-        static void DropPlayer(object? sender, UserDroppingEventArgs e)
+        static void DropUser(object? sender, UserDroppingEventArgs e)
         {
             var game = (GameInstance) sender!;
             var gc = PlayingUsers[e.DroppingUser];
@@ -93,12 +80,10 @@ namespace Leisure
         static void CloseGame(object? sender, EventArgs e)
         {
             var game = (GameInstance) sender!;
-            foreach (var p in game.Players)
+            foreach (var p in game.Users)
             {
-                DropPlayer(game, new UserDroppingEventArgs(p));
+                DropUser(game, new UserDroppingEventArgs(p));
             }
-
-            game.Players.Clear();
         }
     }
 }

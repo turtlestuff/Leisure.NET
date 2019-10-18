@@ -24,15 +24,20 @@ namespace MathOlympics
 
         ConcurrentDictionary<IUser, UserState> UserCompletion { get; }
         
-        public MathOlympicsGameInstance(IDiscordClient client, ImmutableArray<IUser> players, int id) : base(client, players, id)
+        public MathOlympicsGameInstance(int id, IDiscordClient client, ImmutableArray<IUser> players, ImmutableArray<IUser> spectators) 
+            : base(id, client, players, spectators)
         {
             UserCompletion = new ConcurrentDictionary<IUser, UserState>(
                 players.Select(p => new KeyValuePair<IUser, UserState>(p, new UserState())), DiscordComparers.UserComparer);
+
+            OriginalPlayerCount = players.Length;
         }
         
-        const int MaxExpressions = 10;
+        const int MaxExpressions = 1;
 
         int DoneUsers;
+
+        int OriginalPlayerCount;
 
         public override async Task Initialize()
         {
@@ -52,13 +57,15 @@ namespace MathOlympics
             Expressions = expressions;
 
             StartTime = DateTime.UtcNow;
-            await Broadcast($"Game {Id} has started. {Expressions[0]} = ?");
+            await this.BroadcastTo($"Game {Id} has started. {Expressions[0]} = ?", players: Players);
+            await this.BroadcastTo($"Game {Id} has started. Waiting for competition to end...", players: Spectators);
         }
 
+        Task IncrementAndTest() => Interlocked.Add(ref DoneUsers, 1) == OriginalPlayerCount ? SendResults() : Task.CompletedTask;
 
         async Task SendResults()
         {
-            var sort = UserCompletion.OrderByDescending(k => k.Value.FinishTime);
+            var sort = UserCompletion.OrderBy(k => k.Value.FinishTime ?? DateTime.MaxValue);
 
             var builder = new EmbedBuilder
             {
@@ -72,11 +79,11 @@ namespace MathOlympics
                         1 => "**🥈 Second Place**",
                         2 => "**🥉 Third Place**",
                         _ => $"#{i + 1}"
-                    }} {key.Mention} - {((value.FinishTime - StartTime)?.TotalSeconds is double s ? s.ToString("F1") : "Dropped")}s";
+                    }} {key.Mention} - {((value.FinishTime - StartTime)?.TotalSeconds is double s ? $"{s:F1}s" : "Dropped")}";
                 }))
             };
 
-            await Broadcast("The results are in!", embed: builder.Build());
+            await this.Broadcast("The results are in!", embed: builder.Build());
             Close();
         }
         
@@ -88,23 +95,29 @@ namespace MathOlympics
                 return;
             }
             
+            // Do not react to spectator messages
+            if (!UserCompletion.ContainsKey(msg.Author)) 
+                return;
+
+            // Don't try to do anything if the user is done
+            if (UserCompletion[msg.Author].Progress is MaxExpressions) return;
+
             if (double.TryParse(msg.Content, out var num))
             {
                 if (Math.Abs(Expressions[UserCompletion[msg.Author].Progress].Compute() - num) < 0.01)
                 {
-                    if (++UserCompletion[msg.Author].Progress is var index && index == MaxExpressions)
+                    switch (++UserCompletion[msg.Author].Progress)
                     {
-                        var time = UserCompletion[msg.Author].FinishTime = DateTime.UtcNow;
-                        await msg.Author.SendMessageAsync(text: $"That was correct! You finished in {(time - StartTime)?.TotalSeconds:F1}s. Waiting for other players to finish...");
+                        case MaxExpressions:
+                            var time = UserCompletion[msg.Author].FinishTime = DateTime.UtcNow;
+                            await msg.Author.SendMessageAsync(
+                                $"That was correct! You finished in {(time - StartTime)?.TotalSeconds:F1}s. Waiting for other players to finish...");
 
-                        if (Interlocked.Add(ref DoneUsers, 1) == Players.Length)
-                        {
-                            await SendResults();
-                        }
-                    }
-                    else
-                    {
-                        await msg.Author.SendMessageAsync($"That was correct! {Expressions[index]} = ?");
+                            await IncrementAndTest();
+                            break;
+                        case var index:
+                            await msg.Author.SendMessageAsync($"That was correct! {Expressions[index]} = ?");
+                            break;
                     }
                 }
                 else
@@ -125,12 +138,8 @@ namespace MathOlympics
         
         async Task DropPlayer(IUser player)
         {
-            OnDroppingPlayer(player);
-            UserCompletion.Remove(player, out _);
-            if (DoneUsers == Players.Length)
-            {
-                await SendResults();
-            }
+            OnDroppingUser(player);
+            await IncrementAndTest();
         }
     }
 }

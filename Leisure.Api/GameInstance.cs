@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
@@ -17,18 +18,30 @@ namespace Leisure
         /// <param name="client">The client which the new game will use.</param>
         /// <param name="id">The ID of the new game.</param>
         /// <param name="players">The players that are in the game.</param>
-        protected GameInstance(IDiscordClient client, ImmutableArray<IUser> players, int id)
+        /// <param name="spectators">The spectators that are in the game.</param>
+        protected GameInstance(int id, IDiscordClient client, ImmutableArray<IUser> players, ImmutableArray<IUser> spectators = default)
         {
             Client = client;
             Id = id;
             Players = players;
+            Spectators = spectators;
         }
 
         /// <summary>
         /// Gets the players playing the game.
         /// </summary>
-        public ImmutableArray<IUser> Players { get; }
+        public ImmutableArray<IUser> Players { get; private set; }
+        
+        /// <summary>
+        /// Gets the spectators spectating the game.
+        /// </summary>
+        public ImmutableArray<IUser> Spectators { get; private set; }
 
+        /// <summary>
+        /// Gets all of the players and spectators in the game.
+        /// </summary>
+        public IEnumerable<IUser> Users => Players.Union(Spectators, DiscordComparers.UserComparer);
+        
         /// <summary>
         /// Get the ID of the game.
         /// </summary>
@@ -62,51 +75,6 @@ namespace Leisure
         public event EventHandler<UserDroppingEventArgs>? UserDropping;
 
         /// <summary>
-        /// Broadcasts a message to every user in the game.
-        /// </summary>
-        /// <param name="text">Text to broadcast</param>
-        /// <param name="isTTS">Message send as TTS? (default is false)</param>
-        /// <param name="embed">Embed to send (default is none)</param>
-        /// <returns></returns>
-        public async Task Broadcast(string text, bool isTTS = false, Embed? embed = default)
-        {
-            foreach (var player in Players)
-            {
-                await player.SendMessageAsync(text, isTTS, embed);
-            }
-        }
-
-        /// <summary>
-        /// Broadcasts a message to every user  n <paramref name="players"/>.
-        /// </summary>
-        /// <param name="text">Text to broadcast</param>
-        /// <param name="isTTS">Message send as TTS? (default is false)</param>
-        /// <param name="embed">Embed to send (default is none)</param>
-        /// <param name="players">Users to send.</param>
-        public async Task BroadcastTo(string text, bool isTTS = false, Embed? embed = default, params IUser[] players)
-        {
-            foreach (var player in players)
-            {
-                await player.SendMessageAsync(text, isTTS, embed);
-            }
-        }
-
-        /// <summary>
-        /// Broadcasts a message to every user not in <paramref name="exclude"/>.
-        /// </summary>
-        /// <param name="text">Text to broadcast</param>
-        /// <param name="isTTS">Message send as TTS? (default is false)</param>
-        /// <param name="embed">Embed to send (default is none)</param>
-        /// <param name="exclude">Users to exclude.</param>
-        public async Task BroadcastExcluding(string text, bool isTTS = false, Embed? embed = default, params IUser[] exclude)
-        {
-            foreach (var p in Players.Except(exclude, DiscordComparers.UserComparer))
-            {
-                await p.SendMessageAsync(text, isTTS, embed);
-            }
-        }
-
-        /// <summary>
         /// Invokes the <see cref="Closing"/> event from derived classes.
         /// </summary>
         protected void OnClosing()
@@ -117,8 +85,15 @@ namespace Leisure
         /// <summary>
         /// Invokes the <see cref="UserDropping"/> event from derived classes.
         /// </summary>
-        protected void OnDroppingPlayer(IUser user)
+        protected void OnDroppingUser(IUser user)
         {
+            if (Players.Contains(user, DiscordComparers.UserComparer))
+                Players = Players.Remove(user, DiscordComparers.UserComparer);
+            else if (Spectators.Contains(user, DiscordComparers.UserComparer))
+                Spectators = Spectators.Remove(user, DiscordComparers.UserComparer);
+            else
+                throw new ArgumentException("The given user is not playing in or spectating this game.", nameof(user));
+
             UserDropping?.Invoke(this, new UserDroppingEventArgs(user));
         }
 

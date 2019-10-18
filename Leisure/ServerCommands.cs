@@ -56,12 +56,13 @@ namespace Leisure
             {
                 case "join":
                     if (Lobbies.TryGetValue(msg.Channel, out var startingGame))
-                        await JoinExistingLobby(game, msg, startingGame);
+                        await JoinExistingLobby(game, msg, startingGame, false);
                     else
                         await StartNewLobby(game, msg);
                     return;
                 case "spectate":
-                    // NYI
+                    if (game.SupportsSpectators && Lobbies.TryGetValue(msg.Channel, out startingGame)) 
+                        await JoinExistingLobby(game, msg, startingGame, true);
                     return;
                 case "close" when Lobbies.TryGetValue(msg.Channel, out var newGame)
                                   && newGame.StartingUser == msg.Author:
@@ -86,9 +87,9 @@ The lobby was closed, but an invalid amount of players were in the lobby. {game.
             else
             {
                 await channel.SendMessageAsync($"Lobby #{lobby.Id} has closed and the game is now starting.");
-                var newGame = game.CreateGame(Client, lobby.Players.ToImmutable(), lobby.Id);
+                var newGame = game.CreateGame(lobby.Id, Client, lobby.Players.ToImmutable(), lobby.Spectators.ToImmutable());
 
-                foreach (var p in lobby.Players)
+                foreach (var p in lobby.Users)
                 {
                     var gc = PlayingUsers.GetOrAdd(p, _ => new GameCollection());
                     gc.Games.TryAdd(newGame.Id, newGame);
@@ -96,7 +97,7 @@ The lobby was closed, but an invalid amount of players were in the lobby. {game.
                 }
 
                 newGame.Closing += CloseGame;
-                newGame.UserDropping += DropPlayer;
+                newGame.UserDropping += DropUser;
                 
                 await newGame.Initialize();
             }
@@ -105,13 +106,13 @@ The lobby was closed, but an invalid amount of players were in the lobby. {game.
             Lobbies.TryRemove(channel, out _);
         }
         
-        static async Task JoinExistingLobby(GameInfo game, SocketUserMessage msg, GameLobby gameLobby)
+        static async Task JoinExistingLobby(GameInfo game, SocketUserMessage msg, GameLobby gameLobby, bool spectating)
         {
-            if (gameLobby.Players.Contains(msg.Author))
-                await msg.Channel.SendMessageAsync($"{msg.Author.Mention}, you have already joined this lobby.");
+            if (gameLobby.Users.Contains(msg.Author, DiscordComparers.UserComparer))
+                await msg.Channel.SendMessageAsync($"{msg.Author.Mention}, You have already joined this lobby.");
             else
-            { 
-                gameLobby.Players.Add(msg.Author);
+            {
+                (spectating ? (game.SupportsSpectators ? gameLobby.Spectators : gameLobby.Players) : gameLobby.Players).Add(msg.Author);
                 await msg.Channel.SendMessageAsync($"**{msg.Author}** has joined the lobby.");
             }
         }

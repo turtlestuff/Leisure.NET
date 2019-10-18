@@ -52,14 +52,20 @@ namespace Leisure
         /// <param name="playerCount">Amount of players to check.</param>
         /// <returns>True if the amount is valid.</returns>
         public virtual bool IsValidPlayerCount(int playerCount) => true;
+        
+        /// <summary>
+        /// Gets whether the game supports users joining as spectators.
+        /// </summary>
+        public abstract bool SupportsSpectators { get; }
 
         /// <summary>
         /// Creates the game.
         /// </summary>
         /// <param name="client">The client the new game will use.</param>
         /// <param name="players">The players in the new game.</param>
+        /// <param name="spectators">The spectators in the new game.</param>
         /// <param name="id">The ID of the game.</param>
         /// <returns>The new <see cref="Leisure.GameInstance"/></returns>
-        public abstract GameInstance CreateGame(IDiscordClient client, ImmutableArray<IUser> players, int id);
+        public abstract GameInstance CreateGame(int id, IDiscordClient client, ImmutableArray<IUser> players, ImmutableArray<IUser> spectators);
     }
 }

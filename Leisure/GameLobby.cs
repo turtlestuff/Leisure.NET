@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 
@@ -23,6 +24,16 @@ namespace Leisure
         /// The members in the lobby that will join the game when it starts.
         /// </summary>
         public ImmutableArray<IUser>.Builder Players { get; } = ImmutableArray.CreateBuilder<IUser>();
+        
+        /// <summary>
+        /// The members in the lobby that will spectate the game when it starts.
+        /// </summary>
+        public ImmutableArray<IUser>.Builder Spectators { get; } = ImmutableArray.CreateBuilder<IUser>();
+
+        /// <summary>
+        /// All the members in the lobby.
+        /// </summary>
+        public IEnumerable<IUser> Users => Players.Union(Spectators, DiscordComparers.UserComparer);
 
         /// <summary>
         /// The ID of the game that will start.
