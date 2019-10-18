@@ -15,5 +15,6 @@ namespace MathOlympics
         public override string PlayerCountDescription => "Any amount";
         public override GameInstance CreateGame(int id, IDiscordClient client, ImmutableArray<IUser> players, ImmutableArray<IUser> spectators) => new MathOlympicsGameInstance(id, client, players, spectators);
         public override bool IsValidPlayerCount(int i) => true;
+        public override bool SupportsSpectators => true;
     }
 }
